@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 
 const CITIES = ['Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Hyderabad', 'Kolkata'];
 
+const BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
+
 export default function AuthModal({ onClose }) {
   const { login } = useAuth();
   const [mode,    setMode]    = useState('login'); // 'login' | 'register'
@@ -22,18 +24,27 @@ export default function AuthModal({ onClose }) {
 
     setLoading(true);
     try {
-      const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const endpoint = mode === 'login'
+        ? `${BASE_URL}/api/auth/login`
+        : `${BASE_URL}/api/auth/register`;
+
       const body = mode === 'login'
         ? { email: form.email, password: form.password }
         : form;
 
-      const res  = await fetch(endpoint, {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
 
+      // Guard against non-JSON responses (e.g. Render spin-up HTML page)
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server is starting up, please try again in a moment.');
+      }
+
+      const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
       login(data.token, data.user);
       onClose();
