@@ -2,13 +2,15 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
+const BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
+
 export function AuthProvider({ children }) {
   const [user,  setUser]  = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem('hm_token'));
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/auth/me', {
+    fetch(`${BASE_URL}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.ok ? r.json() : Promise.reject())
